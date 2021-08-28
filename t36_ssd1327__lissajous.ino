@@ -1,4 +1,4 @@
-/* -------- DISPLAY --------------------------------------------------------- */
+/* -------- MAIN DISPLAY ---------------------------------------------------- */
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1327.h>
 #include "Font5x7FixedMono.h"
@@ -25,6 +25,28 @@ void display_setup(void) {
   display.setRotation(1);
   display.clearDisplay();
   display.display();
+}
+
+/* -------- MENU DISPLAY ---------------------------------------------------- */
+#include <Adafruit_SSD1306.h>
+#include <Wire.h>
+
+#define MENU_OLED_ADDRESS 0x78
+#define MENU_OLED_SDA 18
+#define MENU_OLED_SCL 19
+
+Adafruit_SSD1306 menu(128, 64, &Wire, OLED_RESET);
+
+void menu_setup(void) {
+  Wire.setSDA(MENU_OLED_SDA);
+  Wire.setSCL(MENU_OLED_SCL);
+  Wire.begin();
+  
+  // SSD1306_SWITCHCAPVCC = generate display voltage from 3.3V internally
+  if(!display.begin(SSD1306_SWITCHCAPVCC, MENU_OLED_ADDRESS)) {
+    Serial.println(F("SSD1306 allocation failed"));
+    for(;;); // Don't proceed, loop forever
+  }
 }
 
 // -------- INPUT ----------------------------------------------------------- */
@@ -174,8 +196,7 @@ int tri_oct_brightness[OCTOGON_TRIANGLES] = {
 };
 
 int t_o_b(int index) {
-  int b = tri_oct_brightness[index];
-  return b;
+  return tri_oct_brightness[index];
 }
 
 /* ------- SCALES ----------------------------------------------------------- */
@@ -206,9 +227,12 @@ void setup() {
   // CONNECT BUTTONS
   buttons::setup();
 
-  // CONNECT DISPLAY
+  // CONNECT MAIN DISPLAY
   display_setup();
 
+  // CONNECT MENU DISPLAY
+  menu_setup();
+  
   // LOCAL
 }
 
