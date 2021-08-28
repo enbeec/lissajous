@@ -96,22 +96,31 @@ void draw_border_wavy(void) {
 #include <Bounce.h>
 #define BOUNCE_MS 10
 
-#define NUM_BUTTONS 3
+#define NUM_BUTTONS 6
 #define B0 0
 #define B1 1
 #define B2 2
+#define B3 3
+#define B4 4
+#define B5 5
 
 void buttons_setup(void) {
   Serial.println("-> connecting buttons");
   pinMode(B0, INPUT_PULLUP);
   pinMode(B1, INPUT_PULLUP);
   pinMode(B2, INPUT_PULLUP);
+  pinMode(B3, INPUT_PULLUP);
+  pinMode(B4, INPUT_PULLUP);
+  pinMode(B5, INPUT_PULLUP);
 };
 
 Bounce buttons[NUM_BUTTONS] = {
   Bounce(B0, BOUNCE_MS),
   Bounce(B1, BOUNCE_MS),
   Bounce(B2, BOUNCE_MS),
+  Bounce(B3, BOUNCE_MS),
+  Bounce(B4, BOUNCE_MS),
+  Bounce(B5, BOUNCE_MS)
 };
 
 bool held[NUM_BUTTONS];
@@ -124,23 +133,15 @@ bool buttons_update(void) {
 }
 
 void handle_inputs(void) {
-  buttons_update();
-  if (buttons[0].fallingEdge()) {
-    held[0] = true;
-  } else if (buttons[0].risingEdge()) {
-    held[0] = false;
+  if (!buttons_update()) {
+    return;
   }
-
-  if (buttons[1].fallingEdge()) {
-    held[1] = true;
-  } else if (buttons[1].risingEdge()) {
-    held[1] = false;
-  }
-
-  if (buttons[2].fallingEdge()) {
-    held[2] = true;
-  } else if (buttons[2].risingEdge()) {
-    held[2] = false;
+  for (int i = 0; i < NUM_BUTTONS; i++) {
+    if (buttons[i].fallingEdge()) {
+      held[i] = true;
+    } else if (buttons[i].risingEdge()) {
+      held[i] = false;
+    }
   }
 }
 
