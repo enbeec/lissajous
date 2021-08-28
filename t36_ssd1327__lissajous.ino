@@ -108,15 +108,13 @@ void buttons_setup(void) {
   pinMode(B2, INPUT_PULLUP);
 };
 
-
-
 Bounce buttons[NUM_BUTTONS] = {
   Bounce(B0, BOUNCE_MS),
   Bounce(B1, BOUNCE_MS),
   Bounce(B2, BOUNCE_MS),
 };
 
-bool held[NUM_BUTTONS] = { false, false, false };
+bool held[NUM_BUTTONS];
 
 bool buttons_update(void) {
   bool result0 = buttons[0].update();
@@ -124,8 +122,6 @@ bool buttons_update(void) {
   bool result2 = buttons[2].update();
   return (result0 && result1 && result2);
 }
-
-
 
 void handle_inputs(void) {
   buttons_update();
@@ -305,7 +301,7 @@ void loop() {
 
   theta += ( delta / 2 );
 
-  // UPDATE PIXELS
+  // UPDATE POLAR OFFSETS
   for (int i = 0; i < cols; i++) {
     if (current_scale != JUST) {
       polar_xs[i] = sin(theta * (scales[current_scale][i][0])) * CIRCLE_RADIUS;
@@ -314,7 +310,8 @@ void loop() {
     }
     polar_ys[i] = sin(theta * (scales[current_scale][i][1])) * CIRCLE_RADIUS;
   }
-
+  
+  // UPDATE PIXELS
   for (int j = 0; j < cols; j++) {
     for (int k = 0; k < rows; k++) {
       add_pixel(
