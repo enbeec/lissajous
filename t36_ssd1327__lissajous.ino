@@ -61,10 +61,10 @@ Bounce buttons[NUM_BUTTONS] = {
 bool held[NUM_BUTTONS];
 
 bool buttons_update(void) {
-  bool result0 = buttons[0].update();
-  bool result1 = buttons[1].update();
-  bool result2 = buttons[2].update();
-  return (result0 && result1 && result2);
+  for (int i = 0; i < NUM_BUTTONS; i++) {
+    if (!buttons[i].update()) return false;
+  }
+  return true;
 }
 
 void handle_inputs(void) {
