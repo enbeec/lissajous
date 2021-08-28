@@ -39,8 +39,7 @@ void display_setup(void) {
 #define B4 4
 #define B5 5
 
-
-
+// TODO rewrite this as a class
 namespace buttons {
 void setup(void) {
   pinMode(B0, INPUT_PULLUP);
@@ -226,7 +225,6 @@ void loop() {
                  4
       0   1   2     5
                  3
-
   */
 
   if (buttons::down[2]) {
