@@ -184,43 +184,22 @@ void dec_delta(void) {
 /* ------- PIXEL BUFFERS ---------------------------------------------------- */
 #define PIXEL_NUM 96
 
-int pixels[PIXEL_NUM][cols][rows][3];
+int pixels[cols][rows][3];
 void clear_pixels(void) {
-  for (int pn = 0; pn < PIXEL_NUM; pn++) {
-    for (int j = 0; j < cols; j++) {
-      for (int k = 0; k < rows; k++) {
-        pixels[pn][j][k][0] = 0;
-        pixels[pn][j][k][1] = 0;
-        pixels[pn][j][k][2] = 0;
-      }
+  for (int j = 0; j < cols; j++) {
+    for (int k = 0; k < rows; k++) {
+      pixels[j][k][0] = 0;
+      pixels[j][k][1] = 0;
+      pixels[j][k][2] = 0;
     }
   }
-}
 
-int pixel_choke = 1;
-void inc_choke(void) {
-  if (pixel_choke + 1 < PIXEL_NUM) pixel_choke++;
 }
-
-void dec_choke(void) {
-  if (pixel_choke - 1 > 1) pixel_choke--;
-}
-
-int current_pixel = 0;
-int oldest_pixel = PIXEL_NUM - 1;
 
 void add_pixel(int col, int row, uint8_t x, uint8_t y, uint8_t z) {
-  uint8_t pixel[3] = { x, y, z };
-  pixels[oldest_pixel][col][row][0] = pixel[0];
-  pixels[oldest_pixel][col][row][1] = pixel[1];
-  pixels[oldest_pixel][col][row][2] = pixel[2];
-}
-
-void advance_pixel(void) {
-  oldest_pixel--;
-  if (oldest_pixel < 0) oldest_pixel = PIXEL_NUM - 1;
-  current_pixel--;
-  if (current_pixel < 0) current_pixel = PIXEL_NUM - 1;
+  pixels[col][row][0] = x;
+  pixels[col][row][1] = y;
+  pixels[col][row][2] = z;
 }
 
 /*  ___CELL MACROS___
@@ -234,22 +213,22 @@ void advance_pixel(void) {
       M   N   O   P
 */
 
-#define pixel_A pixels[current_pixel][0][0][0], pixels[current_pixel][0][0][1]
-#define pixel_B pixels[current_pixel][0][1][0], pixels[current_pixel][0][1][1]
-#define pixel_C pixels[current_pixel][0][2][0], pixels[current_pixel][0][2][1]
-#define pixel_D pixels[current_pixel][0][3][0], pixels[current_pixel][0][3][1]
-#define pixel_E pixels[current_pixel][1][0][0], pixels[current_pixel][1][0][1]
-#define pixel_F pixels[current_pixel][1][1][0], pixels[current_pixel][1][1][1]
-#define pixel_G pixels[current_pixel][1][2][0], pixels[current_pixel][1][2][1]
-#define pixel_H pixels[current_pixel][1][3][0], pixels[current_pixel][1][3][1]
-#define pixel_I pixels[current_pixel][2][0][0], pixels[current_pixel][2][0][1]
-#define pixel_J pixels[current_pixel][2][1][0], pixels[current_pixel][2][1][1]
-#define pixel_K pixels[current_pixel][2][2][0], pixels[current_pixel][2][2][1]
-#define pixel_L pixels[current_pixel][2][3][0], pixels[current_pixel][2][3][1]
-#define pixel_M pixels[current_pixel][3][0][0], pixels[current_pixel][3][0][1]
-#define pixel_N pixels[current_pixel][3][1][0], pixels[current_pixel][3][1][1]
-#define pixel_O pixels[current_pixel][3][2][0], pixels[current_pixel][3][2][1]
-#define pixel_P pixels[current_pixel][3][3][0], pixels[current_pixel][3][3][1]
+#define pixel_A pixels[0][0][0], pixels[0][0][1]
+#define pixel_B pixels[0][1][0], pixels[0][1][1]
+#define pixel_C pixels[0][2][0], pixels[0][2][1]
+#define pixel_D pixels[0][3][0], pixels[0][3][1]
+#define pixel_E pixels[1][0][0], pixels[1][0][1]
+#define pixel_F pixels[1][1][0], pixels[1][1][1]
+#define pixel_G pixels[1][2][0], pixels[1][2][1]
+#define pixel_H pixels[1][3][0], pixels[1][3][1]
+#define pixel_I pixels[2][0][0], pixels[2][0][1]
+#define pixel_J pixels[2][1][0], pixels[2][1][1]
+#define pixel_K pixels[2][2][0], pixels[2][2][1]
+#define pixel_L pixels[2][3][0], pixels[2][3][1]
+#define pixel_M pixels[3][0][0], pixels[3][0][1]
+#define pixel_N pixels[3][1][0], pixels[3][1][1]
+#define pixel_O pixels[3][2][0], pixels[3][2][1]
+#define pixel_P pixels[3][3][0], pixels[3][3][1]
 
 /* ------- SCALES ----------------------------------------------------------- */
 enum SCALES { MULT, PYTHAG, JUST, NUM_SCALES };
@@ -294,16 +273,12 @@ void loop() {
   handle_inputs();
 
   if (buttons[2].risingEdge() && (!held[0] && !held[1])) {
-    clear_pixels();
+    //clear_pixels();
     next_scale();
   }
-  if (held[2]) {
-    if (buttons[0].fallingEdge() || (held[0])) dec_choke();
-    if (buttons[1].fallingEdge() || (held[1])) inc_choke();
-  } else {
-    if (buttons[0].fallingEdge() || (every_fourth && held[0])) dec_delta();
-    if (buttons[1].fallingEdge() || (every_fourth && held[1])) inc_delta();
-  }
+
+  if (buttons[0].fallingEdge() || (every_fourth && held[0])) dec_delta();
+  if (buttons[1].fallingEdge() || (every_fourth && held[1])) inc_delta();
 
   theta += delta;
 
@@ -331,65 +306,56 @@ void loop() {
         2, SSD1327_WHITE
       );
 
-      // DRAW EVERYTHING
-      for (int p = 0; p < pixel_choke; p++) {
-        int pixel = p + current_pixel;
-        if (pixel > PIXEL_NUM - 1) pixel = pixel % PIXEL_NUM - 1;
-        display.drawPixel(
-          pixels[pixel][j][k][0],
-          pixels[pixel][j][k][1],
-          pixels[pixel][j][k][2] / 4
-        );
-        pixels[pixel][j][k][2]--;
-      }
-
-      // DRAW LINES
-      // using named macros for each current pixel
-
-
-      // row ABCD
-      display.drawLine(pixel_A, pixel_B, 8);
-      display.drawLine(pixel_B, pixel_C, 8);
-      display.drawLine(pixel_C, pixel_D, 8);
-
-      // row EFGH
-      display.drawLine(pixel_E, pixel_F, 8);
-      display.drawLine(pixel_F, pixel_G, 8);
-      display.drawLine(pixel_G, pixel_H, 8);
-
-      // row IJKL
-      display.drawLine(pixel_I, pixel_J, 8);
-      display.drawLine(pixel_J, pixel_K, 8);
-      display.drawLine(pixel_K, pixel_L, 8);
-
-      // row MNOP
-      display.drawLine(pixel_M, pixel_N, 8);
-      display.drawLine(pixel_N, pixel_O, 8);
-      display.drawLine(pixel_O, pixel_P, 8);
-
-      // col AEIM
-      display.drawLine(pixel_A, pixel_E, 8);
-      display.drawLine(pixel_E, pixel_I, 8);
-      display.drawLine(pixel_I, pixel_M, 8);
-
-      // col BFJN
-      display.drawLine(pixel_B, pixel_F, 8);
-      display.drawLine(pixel_F, pixel_J, 8);
-      display.drawLine(pixel_J, pixel_N, 8);
-
-      // col CGKO
-      display.drawLine(pixel_C, pixel_G, 8);
-      display.drawLine(pixel_G, pixel_K, 8);
-      display.drawLine(pixel_K, pixel_O, 8);
-
-      // col DHLP
-      display.drawLine(pixel_D, pixel_H, 8);
-      display.drawLine(pixel_H, pixel_L, 8);
-      display.drawLine(pixel_L, pixel_P, 8);
+      display.drawPixel(
+        pixels[j][k][0],
+        pixels[j][k][1],
+        pixels[j][k][2] / 4
+      );
     }
   }
+  
+  // DRAW LINES
+  // using named macros for each current pixel
 
-  advance_pixel();
+  // row ABCD
+  display.drawLine(pixel_A, pixel_B, 8);
+  display.drawLine(pixel_B, pixel_C, 8);
+  display.drawLine(pixel_C, pixel_D, 8);
+
+  // row EFGH
+  display.drawLine(pixel_E, pixel_F, 8);
+  display.drawLine(pixel_F, pixel_G, 8);
+  display.drawLine(pixel_G, pixel_H, 8);
+
+  // row IJKL
+  display.drawLine(pixel_I, pixel_J, 8);
+  display.drawLine(pixel_J, pixel_K, 8);
+  display.drawLine(pixel_K, pixel_L, 8);
+
+  // row MNOP
+  display.drawLine(pixel_M, pixel_N, 8);
+  display.drawLine(pixel_N, pixel_O, 8);
+  display.drawLine(pixel_O, pixel_P, 8);
+
+  // col AEIM
+  display.drawLine(pixel_A, pixel_E, 8);
+  display.drawLine(pixel_E, pixel_I, 8);
+  display.drawLine(pixel_I, pixel_M, 8);
+
+  // col BFJN
+  display.drawLine(pixel_B, pixel_F, 8);
+  display.drawLine(pixel_F, pixel_J, 8);
+  display.drawLine(pixel_J, pixel_N, 8);
+
+  // col CGKO
+  display.drawLine(pixel_C, pixel_G, 8);
+  display.drawLine(pixel_G, pixel_K, 8);
+  display.drawLine(pixel_K, pixel_O, 8);
+
+  // col DHLP
+  display.drawLine(pixel_D, pixel_H, 8);
+  display.drawLine(pixel_H, pixel_L, 8);
+  display.drawLine(pixel_L, pixel_P, 8);
 
   // TODO better timing model
   delay(40);
