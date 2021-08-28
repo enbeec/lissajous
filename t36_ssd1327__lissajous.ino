@@ -106,12 +106,12 @@ void buttons_setup(void) {
   pinMode(B0, INPUT_PULLUP);
   pinMode(B1, INPUT_PULLUP);
   pinMode(B2, INPUT_PULLUP);
-}
+};
 
 Bounce buttons[NUM_BUTTONS] = {
   Bounce(B0, BOUNCE_MS),
   Bounce(B1, BOUNCE_MS),
-  Bounce(B2, BOUNCE_MS)
+  Bounce(B2, BOUNCE_MS),
 };
 
 bool held[NUM_BUTTONS] = { false, false, false };
@@ -169,9 +169,9 @@ double polar_xs[rows] = { 0, 0, 0 };
 double polar_ys[cols] = { 1, 1, 1 };
 
 #define DELTA_MAX 0.2
-#define DELTA_MIN 0.02
+#define DELTA_MIN 0.01
 #define DELTA_STEP 0.01
-float delta = 0.083;
+float delta = 0.03;
 
 void inc_delta(void) {
   if (delta + DELTA_STEP < DELTA_MAX) delta += DELTA_STEP;
@@ -181,9 +181,7 @@ void dec_delta(void) {
   if (delta - DELTA_STEP > DELTA_MIN) delta -= DELTA_STEP;
 }
 
-/* ------- PIXEL BUFFERS ---------------------------------------------------- */
-#define PIXEL_NUM 96
-
+/* ------- PIXELS ----------------------------------------------------------- */
 int pixels[cols][rows][3];
 void clear_pixels(void) {
   for (int j = 0; j < cols; j++) {
@@ -230,6 +228,26 @@ void add_pixel(int col, int row, uint8_t x, uint8_t y, uint8_t z) {
 #define pixel_O pixels[3][2][0], pixels[3][2][1]
 #define pixel_P pixels[3][3][0], pixels[3][3][1]
 
+/* ------- TRIANGLE OCTOGON ------------------------------------------------- */
+int tri_oct_brightness_min = 2;
+int tri_oct_brightness_max = 14;
+int tri_oct_brightness[14] = {
+  int(random(tri_oct_brightness_min,tri_oct_brightness_max)),
+  int(random(tri_oct_brightness_min,tri_oct_brightness_max)),
+  int(random(tri_oct_brightness_min,tri_oct_brightness_max)),
+  int(random(tri_oct_brightness_min,tri_oct_brightness_max)),
+  int(random(tri_oct_brightness_min,tri_oct_brightness_max)),
+  int(random(tri_oct_brightness_min,tri_oct_brightness_max)),
+  int(random(tri_oct_brightness_min,tri_oct_brightness_max)),
+  int(random(tri_oct_brightness_min,tri_oct_brightness_max)),
+  int(random(tri_oct_brightness_min,tri_oct_brightness_max)),
+  int(random(tri_oct_brightness_min,tri_oct_brightness_max)),
+  int(random(tri_oct_brightness_min,tri_oct_brightness_max)),
+  int(random(tri_oct_brightness_min,tri_oct_brightness_max)),
+  int(random(tri_oct_brightness_min,tri_oct_brightness_max)),
+  int(random(tri_oct_brightness_min,tri_oct_brightness_max))
+};
+
 /* ------- SCALES ----------------------------------------------------------- */
 enum SCALES { MULT, PYTHAG, JUST, NUM_SCALES };
 double scales[NUM_SCALES][cols][2] = {
@@ -268,7 +286,7 @@ void loop() {
   tick++;
   //bool every_other = tick % 2 == 0;
   //bool every_third = tick % 3 == 0;
-  bool every_fourth  = tick % 4  == 0;
+  bool every_eighth = tick % 8  == 0;
 
   handle_inputs();
 
@@ -277,10 +295,10 @@ void loop() {
     next_scale();
   }
 
-  if (buttons[0].fallingEdge() || (every_fourth && held[0])) dec_delta();
-  if (buttons[1].fallingEdge() || (every_fourth && held[1])) inc_delta();
+  if (buttons[0].fallingEdge() || (every_eighth && held[0])) dec_delta();
+  if (buttons[1].fallingEdge() || (every_eighth && held[1])) inc_delta();
 
-  theta += delta;
+  theta += ( delta / 2 );
 
   // REDRAW
   display.clearDisplay();
@@ -300,65 +318,69 @@ void loop() {
         60
       );
 
-      display.drawCircle(
-        grid[j][k][0] + int(polar_xs[j]),
-        grid[j][k][1] + int(polar_ys[k]),
-        2, SSD1327_WHITE
-      );
-
-      display.drawPixel(
-        pixels[j][k][0],
-        pixels[j][k][1],
-        pixels[j][k][2] / 4
-      );
+//      display.drawCircle(
+//        grid[j][k][0] + int(polar_xs[j]),
+//        grid[j][k][1] + int(polar_ys[k]),
+//        2, SSD1327_WHITE
+//      );
+//
+//      display.drawPixel(
+//        pixels[j][k][0],
+//        pixels[j][k][1],
+//        pixels[j][k][2] / 4
+//      );
     }
   }
-  
-  // DRAW LINES
-  // using named macros for each current pixel
 
-  // row ABCD
-  display.drawLine(pixel_A, pixel_B, 8);
-  display.drawLine(pixel_B, pixel_C, 8);
-  display.drawLine(pixel_C, pixel_D, 8);
+  #ifdef DRAW_MESH
+  // draw triangle mesh
+  // top left box
+  display.drawTriangle(pixel_A, pixel_B, pixel_E, 8);
+  display.drawTriangle(pixel_B, pixel_F, pixel_E, 8);
+  // top middle box
+  display.drawTriangle(pixel_B, pixel_C, pixel_F, 8);
+  display.drawTriangle(pixel_C, pixel_G, pixel_F, 8);
+	// top right box **FLIPPED**
+  display.drawTriangle(pixel_C, pixel_H, pixel_G, 8);
+  display.drawTriangle(pixel_C, pixel_D, pixel_H, 8);
+  // mid left box
+  display.drawTriangle(pixel_E, pixel_F, pixel_I, 8);
+  display.drawTriangle(pixel_F, pixel_J, pixel_I, 8);
+  // mid middle box
+  display.drawTriangle(pixel_F, pixel_G, pixel_J, 8);
+  display.drawTriangle(pixel_G, pixel_K, pixel_J, 8);
+	// mid right box
+  display.drawTriangle(pixel_G, pixel_H, pixel_K, 8);
+  display.drawTriangle(pixel_H, pixel_L, pixel_K, 8);
+  // bot left box **FLIPPED**
+  display.drawTriangle(pixel_I, pixel_N, pixel_M, 8);
+  display.drawTriangle(pixel_I, pixel_J, pixel_N, 8);
+  // bot middle box
+  display.drawTriangle(pixel_J, pixel_K, pixel_N, 8);
+  display.drawTriangle(pixel_K, pixel_O, pixel_N, 8);
+	// bot right box
+  display.drawTriangle(pixel_K, pixel_L, pixel_O, 8);
+  display.drawTriangle(pixel_L, pixel_P, pixel_O, 8);
+  #endif
 
-  // row EFGH
-  display.drawLine(pixel_E, pixel_F, 8);
-  display.drawLine(pixel_F, pixel_G, 8);
-  display.drawLine(pixel_G, pixel_H, 8);
-
-  // row IJKL
-  display.drawLine(pixel_I, pixel_J, 8);
-  display.drawLine(pixel_J, pixel_K, 8);
-  display.drawLine(pixel_K, pixel_L, 8);
-
-  // row MNOP
-  display.drawLine(pixel_M, pixel_N, 8);
-  display.drawLine(pixel_N, pixel_O, 8);
-  display.drawLine(pixel_O, pixel_P, 8);
-
-  // col AEIM
-  display.drawLine(pixel_A, pixel_E, 8);
-  display.drawLine(pixel_E, pixel_I, 8);
-  display.drawLine(pixel_I, pixel_M, 8);
-
-  // col BFJN
-  display.drawLine(pixel_B, pixel_F, 8);
-  display.drawLine(pixel_F, pixel_J, 8);
-  display.drawLine(pixel_J, pixel_N, 8);
-
-  // col CGKO
-  display.drawLine(pixel_C, pixel_G, 8);
-  display.drawLine(pixel_G, pixel_K, 8);
-  display.drawLine(pixel_K, pixel_O, 8);
-
-  // col DHLP
-  display.drawLine(pixel_D, pixel_H, 8);
-  display.drawLine(pixel_H, pixel_L, 8);
-  display.drawLine(pixel_L, pixel_P, 8);
+	// fill the octogon (14 triangles)
+  display.fillTriangle(pixel_B, pixel_F, pixel_E, tri_oct_brightness[0]);
+  display.fillTriangle(pixel_B, pixel_C, pixel_F, tri_oct_brightness[1]);
+  display.fillTriangle(pixel_C, pixel_G, pixel_F, tri_oct_brightness[2]);
+  display.fillTriangle(pixel_C, pixel_H, pixel_G, tri_oct_brightness[3]);
+  display.fillTriangle(pixel_E, pixel_F, pixel_I, tri_oct_brightness[4]);
+  display.fillTriangle(pixel_F, pixel_J, pixel_I, tri_oct_brightness[5]);
+  display.fillTriangle(pixel_F, pixel_G, pixel_J, tri_oct_brightness[6]);
+  display.fillTriangle(pixel_G, pixel_K, pixel_J, tri_oct_brightness[7]);
+  display.fillTriangle(pixel_G, pixel_H, pixel_K, tri_oct_brightness[8]);
+  display.fillTriangle(pixel_H, pixel_L, pixel_K, tri_oct_brightness[9]);
+  display.fillTriangle(pixel_I, pixel_J, pixel_N, tri_oct_brightness[10]);
+  display.fillTriangle(pixel_J, pixel_K, pixel_N, tri_oct_brightness[11]);
+  display.fillTriangle(pixel_K, pixel_O, pixel_N, tri_oct_brightness[12]);
+  display.fillTriangle(pixel_K, pixel_L, pixel_O, tri_oct_brightness[13]);
 
   // TODO better timing model
-  delay(40);
+  delay(10);
   display.display();
 
 }
