@@ -27,7 +27,6 @@ void display_setup(void) {
   display.display();
 }
 
-
 #define ROW_SIMPLE   "+-------------------+"
 #define ROW_WAVY     "<~~~~~~~~~~~~~~~~~~~>"
 #define ROW_COMMENT  "/*******************/"
@@ -131,7 +130,6 @@ bool buttons_update(void) {
     ...because our buttons are wired active LOW
 */
 
-
 void handle_inputs(void) {
   buttons_update();
   if (buttons[0].fallingEdge()) {
@@ -165,39 +163,7 @@ int grid[4][4][2] {
   {{22, 98}, {48, 98}, {74, 98}, {100, 98}}
 };
 
-/* ------- SCALES ----------------------------------------------------------- */
-enum SCALES { MULT, PYTHAG, JUST, NUM_SCALES };
-double scales[NUM_SCALES][cols][2] = {
-  // MULT
-  { {1, 1}, {2, 2}, {3, 3}, {4, 4} },
-  // PYTHAG
-  { {1, 1}, {9, 8}, {4, 3}, {3, 2} },
-  // JUST
-  { {1, 1}, {9, 8}, {6, 5}, {5, 4} },
-};
-
-int current_scale = MULT;
-void next_scale(void) {
-  current_scale++;
-  if (current_scale == NUM_SCALES) current_scale = MULT;
-  clear_pixels();
-}
-
-/* -------------------------------------------------------------------------- */
-void setup() {
-  Serial.begin(115200);
-  delay(1000);
-  Serial.println("Starting...");
-
-  // CONNECT BUTTONS
-  buttons_setup();
-
-  // CONNECT DISPLAY
-  display_setup();
-
-  // LOCAL
-}
-
+/* ------- TRIG ------------------------------------------------------------- */
 double theta = 0;
 double polar_xs[rows] = { 0, 0, 0 };
 double polar_ys[cols] = { 1, 1, 1 };
@@ -215,11 +181,10 @@ void dec_delta(void) {
   if (delta - DELTA_STEP > DELTA_MIN) delta -= DELTA_STEP;
 }
 
-uint8_t tick = 0;
-
+/* ------- PIXEL BUFFERS ---------------------------------------------------- */
 #define PIXEL_NUM 96
 
-uint8_t pixels[PIXEL_NUM][cols][rows][3];
+int pixels[PIXEL_NUM][cols][rows][3];
 void clear_pixels(void) {
   for (int pn = 0; pn < PIXEL_NUM; pn++) {
     for (int j = 0; j < cols; j++) {
@@ -234,7 +199,7 @@ void clear_pixels(void) {
 
 int pixel_choke = 1;
 void inc_choke(void) {
-  if (pixel_choke + 1 <= PIXEL_NUM) pixel_choke++;
+  if (pixel_choke + 1 < PIXEL_NUM) pixel_choke++;
 }
 
 void dec_choke(void) {
@@ -243,6 +208,7 @@ void dec_choke(void) {
 
 int current_pixel = 0;
 int oldest_pixel = PIXEL_NUM - 1;
+
 void add_pixel(int col, int row, uint8_t x, uint8_t y, uint8_t z) {
   uint8_t pixel[3] = { x, y, z };
   pixels[oldest_pixel][col][row][0] = pixel[0];
@@ -285,7 +251,39 @@ void advance_pixel(void) {
 #define pixel_O pixels[current_pixel][3][2][0], pixels[current_pixel][3][2][1]
 #define pixel_P pixels[current_pixel][3][3][0], pixels[current_pixel][3][3][1]
 
+/* ------- SCALES ----------------------------------------------------------- */
+enum SCALES { MULT, PYTHAG, JUST, NUM_SCALES };
+double scales[NUM_SCALES][cols][2] = {
+  // MULT
+  { {1, 1}, {2, 2}, {3, 3}, {4, 4} },
+  // PYTHAG
+  { {1, 1}, {9, 8}, {4, 3}, {3, 2} },
+  // JUST
+  { {1, 1}, {9, 8}, {6, 5}, {5, 4} },
+};
+
+int current_scale = MULT;
+void next_scale(void) {
+  current_scale++;
+  if (current_scale == NUM_SCALES) current_scale = MULT;
+}
+
 /* -------------------------------------------------------------------------- */
+uint8_t tick = 0;
+
+void setup() {
+  Serial.begin(115200);
+  delay(1000);
+  Serial.println("Starting...");
+
+  // CONNECT BUTTONS
+  buttons_setup();
+
+  // CONNECT DISPLAY
+  display_setup();
+
+  // LOCAL
+}
 
 void loop() {
   tick++;
@@ -295,7 +293,10 @@ void loop() {
 
   handle_inputs();
 
-  if (buttons[2].risingEdge() && (!held[0] && !held[1])) next_scale();
+  if (buttons[2].risingEdge() && (!held[0] && !held[1])) {
+    clear_pixels();
+    next_scale();
+  }
   if (held[2]) {
     if (buttons[0].fallingEdge() || (held[0])) dec_choke();
     if (buttons[1].fallingEdge() || (held[1])) inc_choke();
@@ -311,37 +312,8 @@ void loop() {
   display.setTextColor(int(12 * cos(theta / 4)));
 
   for (int i = 0; i < cols; i++) {
-    //    display.drawCircle(
-    //      grid[0][i+1][0],
-    //      grid[0][i+1][1],
-    //      CIRCLE_RADIUS - 1,4
-    //    );
-    //
-    //    display.drawCircle(
-    //      grid[i+1][0][0],
-    //      grid[i+1][0][1],
-    //      CIRCLE_RADIUS - 1,4
-    //    );
-
     polar_xs[i] = sin(theta * (scales[current_scale][i][0])) * CIRCLE_RADIUS;
     polar_ys[i] = sin(theta * (scales[current_scale][i][1])) * CIRCLE_RADIUS;
-
-
-
-    //    display.drawLine(
-    //      grid[0][i][0] + int(polar_xs[i]),
-    //      grid[0][i][0] + int(polar_ys[i]) - 72,
-    //      grid[0][i][0] + int(polar_xs[i]),
-    //      grid[0][i][0] + int(polar_ys[i]) + 72,
-    //      int(5 * polar_xs[i] / CIRCLE_RADIUS)
-    //    );
-    //    display.drawLine(
-    //      grid[0][i][0] + int(polar_xs[i]) - 72,
-    //      grid[0][i][0] + int(polar_ys[i]),
-    //      grid[0][i][0] + int(polar_xs[i]) + 72,
-    //      grid[0][i][0] + int(polar_ys[i]),
-    //      int(5 * polar_ys[i] / CIRCLE_RADIUS)
-    //    );
   }
 
   for (int j = 0; j < cols; j++) {
