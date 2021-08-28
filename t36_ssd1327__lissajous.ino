@@ -1,4 +1,4 @@
-/////////////////// DISPLAY /////////////////////////
+/* ---------------- DISPLAY ---------------------------------------- */
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1327.h>
 #include "Font5x7FixedMono.h"
@@ -9,9 +9,7 @@
 #define OLED_DC 8
 #define OLED_RESET -1
 
-Adafruit_SSD1327 display(128, 128,
-                         &SPI, OLED_DC,
-                         OLED_RESET, OLED_CS);
+Adafruit_SSD1327 display(128, 128, &SPI, OLED_DC, OLED_RESET, OLED_CS);
 
 void display_setup(void) {
   Serial.println("-> connecting display");
@@ -28,6 +26,7 @@ void display_setup(void) {
   display.clearDisplay();
   display.display();
 }
+
 
 #define ROW_SIMPLE   "+-------------------+"
 #define ROW_WAVY     "<~~~~~~~~~~~~~~~~~~~>"
@@ -462,20 +461,6 @@ void loop() {
   }
 
   advance_pixel();
-
-  //  switch (current_border) {
-  //    case NORMAL:
-  //      draw_border();
-  //      break;
-  //    case WAVY:
-  //      draw_border_wavy();
-  //      break;
-  //    case COMMENT:
-  //      draw_border_comment();
-  //      break;
-  //    case NONE:
-  //      break;
-  //  }
 
   //display.setCursor(12,123);
   //display.printf("sin(%3.1f) %1.2f", theta, sin(theta));
