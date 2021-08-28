@@ -85,7 +85,9 @@ void update(void) {
 };
 
 /* ------- GRID COORDS ------------------------------------------------------ */
-#define CIRCLE_RADIUS 10
+#define GRID_LENGTH 26
+#define GRID_START_X 22
+#define GRID_START_Y 20
 #define cols 4
 #define rows cols
 // array of center coordinates
@@ -97,6 +99,17 @@ int grid[4][4][2] {
 };
 
 /* ------- TRIG ------------------------------------------------------------- */
+#define RADIUS_MAX 21
+#define RADIUS_MIN 2
+int radius = 10;
+void dec_radius(void) {
+  if (radius > RADIUS_MIN) radius--;
+};
+
+void inc_radius(void) {
+  if (radius < RADIUS_MAX) radius++;
+};
+
 double theta = 0;
 double polar_xs[rows] = { 0, 0, 0 };
 double polar_ys[cols] = { 1, 1, 1 };
@@ -207,6 +220,8 @@ void setup() {
   delay(1000);
   Serial.println("Starting...");
 
+  randomSeed(analogRead(0));
+
   // CONNECT BUTTONS
   buttons::setup();
 
@@ -237,7 +252,8 @@ void loop() {
   }
 #endif
 
-
+  if (buttons::down[0]) dec_radius();
+  if (buttons::down[1]) inc_radius();
   if (buttons::down[2]) prev_scale();
   if (buttons::down[5]) next_scale();
   if (buttons::down[3] || (every_eighth && buttons::held[3])) dec_delta();
@@ -248,11 +264,11 @@ void loop() {
   // UPDATE POLAR OFFSETS
   for (int i = 0; i < cols; i++) {
     if (current_scale != JUST) {
-      polar_xs[i] = sin(theta * (scales[current_scale][i][0])) * CIRCLE_RADIUS;
+      polar_xs[i] = sin(theta * (scales[current_scale][i][0])) * radius;
     } else {
-      polar_xs[i] = cos(theta * (scales[current_scale][i][0])) * CIRCLE_RADIUS;
+      polar_xs[i] = cos(theta * (scales[current_scale][i][0])) * radius;
     }
-    polar_ys[i] = sin(theta * (scales[current_scale][i][1])) * CIRCLE_RADIUS;
+    polar_ys[i] = sin(theta * (scales[current_scale][i][1])) * radius;
   }
 
   // UPDATE PIXELS
