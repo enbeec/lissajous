@@ -153,8 +153,37 @@ void handle_inputs(void) {
   }
 }
 
-/////////////////////////////////////////////////////
+/* ------- GRID COORDS ------------------------------------------------------ */
+#define CIRCLE_RADIUS 10
+#define cols 4
+#define rows cols
+// array of center coordinates
+int grid[4][4][2] {
+  {{22, 20}, {48, 20}, {74, 20}, {100, 20}},
+  {{22, 46}, {48, 46}, {74, 46}, {100, 46}},
+  {{22, 72}, {48, 72}, {74, 72}, {100, 72}},
+  {{22, 98}, {48, 98}, {74, 98}, {100, 98}}
+};
 
+/* ------- SCALES ----------------------------------------------------------- */
+enum SCALES { MULT, PYTHAG, JUST, NUM_SCALES };
+double scales[NUM_SCALES][cols][2] = {
+  // MULT
+  { {1, 1}, {2, 2}, {3, 3}, {4, 4} },
+  // PYTHAG
+  { {1, 1}, {9, 8}, {4, 3}, {3, 2} },
+  // JUST
+  { {1, 1}, {9, 8}, {6, 5}, {5, 4} },
+};
+
+int current_scale = MULT;
+void next_scale(void) {
+  current_scale++;
+  if (current_scale == NUM_SCALES) current_scale = MULT;
+  clear_pixels();
+}
+
+/* -------------------------------------------------------------------------- */
 void setup() {
   Serial.begin(115200);
   delay(1000);
@@ -168,27 +197,6 @@ void setup() {
 
   // LOCAL
 }
-
-enum BORDERS {NONE, NORMAL, WAVY, COMMENT, NUM_BORDERS};
-int current_border = NONE;
-void next_border(void) {
-  current_border += 1;
-  if (current_border == NUM_BORDERS) current_border = NONE;
-}
-
-#define CIRCLE_RADIUS 10
-// array of center coordinates
-int grid[4][4][2] {
-  {{22, 20}, {48, 20}, {74, 20}, {100, 20}},
-  {{22, 46}, {48, 46}, {74, 46}, {100, 46}},
-  {{22, 72}, {48, 72}, {74, 72}, {100, 72}},
-  {{22, 98}, {48, 98}, {74, 98}, {100, 98}}
-};
-
-
-
-#define cols 4
-#define rows cols
 
 double theta = 0;
 double polar_xs[rows] = { 0, 0, 0 };
@@ -205,23 +213,6 @@ void inc_delta(void) {
 
 void dec_delta(void) {
   if (delta - DELTA_STEP > DELTA_MIN) delta -= DELTA_STEP;
-}
-
-enum SCALES { MULT, PYTHAG, JUST, NUM_SCALES };
-double scales[NUM_SCALES][cols][2] = {
-  // MULT
-  { {1, 1}, {2, 2}, {3, 3}, {4, 4} },
-  // PYTHAG
-  { {1, 1}, {9, 8}, {4, 3}, {3, 2} },
-  // JUST
-  { {1, 1}, {9, 8}, {6, 5}, {5, 4} },
-};
-
-int current_scale = MULT;
-void next_scale(void) {
-  current_scale++;
-  if (current_scale == NUM_SCALES) current_scale = MULT;
-  clear_pixels();
 }
 
 uint8_t tick = 0;
@@ -266,16 +257,16 @@ void advance_pixel(void) {
   if (current_pixel < 0) current_pixel = PIXEL_NUM - 1;
 }
 
-/*  ___CELL MACROS___ 
- *   
- *    A   B   C   D
- *    
- *    E   F   G   H
- *    
- *    I   J   K   L
- *    
- *    M   N   O   P
- */
+/*  ___CELL MACROS___
+
+      A   B   C   D
+
+      E   F   G   H
+
+      I   J   K   L
+
+      M   N   O   P
+*/
 
 #define pixel_A pixels[current_pixel][0][0][0], pixels[current_pixel][0][0][1]
 #define pixel_B pixels[current_pixel][0][1][0], pixels[current_pixel][0][1][1]
@@ -383,7 +374,7 @@ void loop() {
       // DRAW LINES
       // using named macros for each current pixel
 
-      
+
       // row ABCD
       display.drawLine(pixel_A, pixel_B, 8);
       display.drawLine(pixel_B, pixel_C, 8);
@@ -408,17 +399,17 @@ void loop() {
       display.drawLine(pixel_A, pixel_E, 8);
       display.drawLine(pixel_E, pixel_I, 8);
       display.drawLine(pixel_I, pixel_M, 8);
-      
+
       // col BFJN
       display.drawLine(pixel_B, pixel_F, 8);
       display.drawLine(pixel_F, pixel_J, 8);
       display.drawLine(pixel_J, pixel_N, 8);
-      
+
       // col CGKO
       display.drawLine(pixel_C, pixel_G, 8);
       display.drawLine(pixel_G, pixel_K, 8);
       display.drawLine(pixel_K, pixel_O, 8);
-      
+
       // col DHLP
       display.drawLine(pixel_D, pixel_H, 8);
       display.drawLine(pixel_H, pixel_L, 8);
@@ -427,7 +418,7 @@ void loop() {
   }
 
   advance_pixel();
-  
+
   // TODO better timing model
   delay(40);
   display.display();
