@@ -194,6 +194,11 @@ void next_scale(void) {
   if (current_scale == NUM_SCALES) current_scale = MULT;
 }
 
+void prev_scale(void) {
+  current_scale--;
+  if (current_scale < MULT) current_scale = JUST;
+}
+
 /* -------------------------------------------------------------------------- */
 uint8_t tick = 0;
 
@@ -233,13 +238,10 @@ void loop() {
 #endif
 
 
-  if (buttons::down[2]) {
-    clear_pixels();
-    next_scale();
-  }
-
-  if (buttons::down[0] || (every_eighth && buttons::held[0])) dec_delta();
-  if (buttons::down[1] || (every_eighth && buttons::held[1])) inc_delta();
+  if (buttons::down[2]) prev_scale();
+  if (buttons::down[5]) next_scale();
+  if (buttons::down[3] || (every_eighth && buttons::held[3])) dec_delta();
+  if (buttons::down[4] || (every_eighth && buttons::held[4])) inc_delta();
 
   theta += ( delta / 2 );
 
