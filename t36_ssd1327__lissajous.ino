@@ -1,4 +1,4 @@
-/* ---------------- DISPLAY ---------------------------------------- */
+/* -------- DISPLAY --------------------------------------------------------- */
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1327.h>
 #include "Font5x7FixedMono.h"
@@ -93,7 +93,7 @@ void draw_border_wavy(void) {
   }
 }
 
-/////////////////// INPUT ///////////////////////////
+// -------- INPUT ----------------------------------------------------------- */
 #include <Bounce.h>
 #define BOUNCE_MS 10
 
@@ -174,45 +174,6 @@ int current_border = NONE;
 void next_border(void) {
   current_border += 1;
   if (current_border == NUM_BORDERS) current_border = NONE;
-}
-
-enum TRIANGLE_POINTS {X1, Y1, X2, Y2, X3, Y3};
-int  tri_points[6] = {
-  54, 20,
-  58, 46,
-  84, 34
-};
-
-void tri_draw(int x_offset = 0, int y_offset = 0) {
-  display.fillTriangle(
-    tri_points[X1] + x_offset, tri_points[Y1] + y_offset,
-    tri_points[X2] + x_offset, tri_points[Y2] + y_offset,
-    tri_points[X3] + x_offset, tri_points[Y3] + y_offset,
-    SSD1327_BLACK
-  );
-  display.drawTriangle(
-    tri_points[X1] + x_offset, tri_points[Y1] + y_offset,
-    tri_points[X2] + x_offset, tri_points[Y2] + y_offset,
-    tri_points[X3] + x_offset, tri_points[Y3] + y_offset,
-    SSD1327_WHITE
-  );
-}
-
-void tri_fill(void) {
-  display.fillTriangle(
-    tri_points[X1], tri_points[Y1],
-    tri_points[X2], tri_points[Y2],
-    tri_points[X3], tri_points[Y3],
-    SSD1327_WHITE
-  );
-}
-
-int tri_center_x(int offset_x = 0) {
-  return ((3 * offset_x) + tri_points[X1] + tri_points[X2] + tri_points[X3]) / 3;
-}
-
-int tri_center_y(int offset_y = 0) {
-  return ((3 * offset_y) + tri_points[Y1] + tri_points[Y2] + tri_points[Y3]) / 3;
 }
 
 #define CIRCLE_RADIUS 10
@@ -305,6 +266,17 @@ void advance_pixel(void) {
   if (current_pixel < 0) current_pixel = PIXEL_NUM - 1;
 }
 
+/*  ___CELL MACROS___ 
+ *   
+ *    A   B   C   D
+ *    
+ *    E   F   G   H
+ *    
+ *    I   J   K   L
+ *    
+ *    M   N   O   P
+ */
+
 #define pixel_A pixels[current_pixel][0][0][0], pixels[current_pixel][0][0][1]
 #define pixel_B pixels[current_pixel][0][1][0], pixels[current_pixel][0][1][1]
 #define pixel_C pixels[current_pixel][0][2][0], pixels[current_pixel][0][2][1]
@@ -321,6 +293,8 @@ void advance_pixel(void) {
 #define pixel_N pixels[current_pixel][3][1][0], pixels[current_pixel][3][1][1]
 #define pixel_O pixels[current_pixel][3][2][0], pixels[current_pixel][3][2][1]
 #define pixel_P pixels[current_pixel][3][3][0], pixels[current_pixel][3][3][1]
+
+/* -------------------------------------------------------------------------- */
 
 void loop() {
   tick++;
@@ -408,15 +382,7 @@ void loop() {
 
       // DRAW LINES
       // using named macros for each current pixel
-      /*
-       *    A   B   C   D
-       *    
-       *    E   F   G   H
-       *    
-       *    I   J   K   L
-       *    
-       *    M   N   O   P
-       */
+
       
       // row ABCD
       display.drawLine(pixel_A, pixel_B, 8);
@@ -461,9 +427,6 @@ void loop() {
   }
 
   advance_pixel();
-
-  //display.setCursor(12,123);
-  //display.printf("sin(%3.1f) %1.2f", theta, sin(theta));
   
   // TODO better timing model
   delay(40);
