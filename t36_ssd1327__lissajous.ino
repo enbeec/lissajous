@@ -27,28 +27,6 @@ void display_setup(void) {
   display.display();
 }
 
-/* -------- MENU DISPLAY ---------------------------------------------------- */
-#include <Adafruit_SSD1306.h>
-#include <Wire.h>
-
-#define MENU_OLED_ADDRESS 0x78
-#define MENU_OLED_SDA 18
-#define MENU_OLED_SCL 19
-
-Adafruit_SSD1306 menu(128, 64, &Wire, OLED_RESET);
-
-void menu_setup(void) {
-  Wire.setSDA(MENU_OLED_SDA);
-  Wire.setSCL(MENU_OLED_SCL);
-  Wire.begin();
-  
-  // SSD1306_SWITCHCAPVCC = generate display voltage from 3.3V internally
-  if(!display.begin(SSD1306_SWITCHCAPVCC, MENU_OLED_ADDRESS)) {
-    Serial.println(F("SSD1306 allocation failed"));
-    for(;;); // Don't proceed, loop forever
-  }
-}
-
 // -------- INPUT ----------------------------------------------------------- */
 #include <Bounce.h>
 #define BOUNCE_MS 10
@@ -229,11 +207,6 @@ void setup() {
 
   // CONNECT MAIN DISPLAY
   display_setup();
-
-  // CONNECT MENU DISPLAY
-  menu_setup();
-  
-  // LOCAL
 }
 
 void loop() {
