@@ -72,9 +72,9 @@ void update(void) {
   for (int i = 0; i < NUM_BUTTONS; i++) {
     down[i] = false;
     up[i] = false;
-    if (!buttons::debounced[i].update()) return false;
+    buttons::debounced[i].update();
     if (buttons::debounced[i].fallingEdge()) {
-      buttons::down[i];
+      buttons::down[i] = true;
       buttons::held[i] = true;
     } else if (buttons::debounced[i].risingEdge()) {
       buttons::up[i] = true;
@@ -85,7 +85,9 @@ void update(void) {
 };
 
 /* ------- GRID COORDS ------------------------------------------------------ */
-#define CIRCLE_RADIUS 10
+#define GRID_LENGTH 26
+#define GRID_START_X 22
+#define GRID_START_Y 20
 #define cols 4
 #define rows cols
 // array of center coordinates
@@ -97,6 +99,17 @@ int grid[4][4][2] {
 };
 
 /* ------- TRIG ------------------------------------------------------------- */
+#define RADIUS_MAX 21
+#define RADIUS_MIN 2
+int radius = 10;
+void dec_radius(void) {
+  if (radius > RADIUS_MIN) radius--;
+};
+
+void inc_radius(void) {
+  if (radius < RADIUS_MAX) radius++;
+};
+
 double theta = 0;
 double polar_xs[rows] = { 0, 0, 0 };
 double polar_ys[cols] = { 1, 1, 1 };
@@ -194,6 +207,11 @@ void next_scale(void) {
   if (current_scale == NUM_SCALES) current_scale = MULT;
 }
 
+void prev_scale(void) {
+  current_scale--;
+  if (current_scale < MULT) current_scale = JUST;
+}
+
 /* -------------------------------------------------------------------------- */
 uint8_t tick = 0;
 
@@ -201,6 +219,8 @@ void setup() {
   Serial.begin(115200);
   delay(1000);
   Serial.println("Starting...");
+
+  randomSeed(analogRead(0));
 
   // CONNECT BUTTONS
   buttons::setup();
@@ -224,24 +244,31 @@ void loop() {
                  3
   */
 
-  if (buttons::down[2]) {
-    clear_pixels();
-    next_scale();
+#ifdef DEBUG
+  for (int i = 0; i < NUM_BUTTONS; i++) {
+    if (buttons::held[i]) Serial.printf("%i is held\n", i);
+    if (buttons::down[i]) Serial.printf("%i down\n", i);
+    if (buttons::up[i]) Serial.printf("%i up\n", i);
   }
+#endif
 
-  if (buttons::down[0] || (every_eighth && buttons::held[0])) dec_delta();
-  if (buttons::down[1] || (every_eighth && buttons::held[1])) inc_delta();
+  if (buttons::down[0]) dec_radius();
+  if (buttons::down[1]) inc_radius();
+  if (buttons::down[2]) prev_scale();
+  if (buttons::down[5]) next_scale();
+  if (buttons::down[3] || (every_eighth && buttons::held[3])) dec_delta();
+  if (buttons::down[4] || (every_eighth && buttons::held[4])) inc_delta();
 
   theta += ( delta / 2 );
 
   // UPDATE POLAR OFFSETS
   for (int i = 0; i < cols; i++) {
     if (current_scale != JUST) {
-      polar_xs[i] = sin(theta * (scales[current_scale][i][0])) * CIRCLE_RADIUS;
+      polar_xs[i] = sin(theta * (scales[current_scale][i][0])) * radius;
     } else {
-      polar_xs[i] = cos(theta * (scales[current_scale][i][0])) * CIRCLE_RADIUS;
+      polar_xs[i] = cos(theta * (scales[current_scale][i][0])) * radius;
     }
-    polar_ys[i] = sin(theta * (scales[current_scale][i][1])) * CIRCLE_RADIUS;
+    polar_ys[i] = sin(theta * (scales[current_scale][i][1])) * radius;
   }
 
   // UPDATE PIXELS
