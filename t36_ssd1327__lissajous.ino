@@ -72,9 +72,9 @@ void update(void) {
   for (int i = 0; i < NUM_BUTTONS; i++) {
     down[i] = false;
     up[i] = false;
-    if (!buttons::debounced[i].update()) return false;
+    buttons::debounced[i].update();
     if (buttons::debounced[i].fallingEdge()) {
-      buttons::down[i];
+      buttons::down[i] = true;
       buttons::held[i] = true;
     } else if (buttons::debounced[i].risingEdge()) {
       buttons::up[i] = true;
@@ -223,6 +223,15 @@ void loop() {
       0   1   2     5
                  3
   */
+
+#ifdef DEBUG
+  for (int i = 0; i < NUM_BUTTONS; i++) {
+    if (buttons::held[i]) Serial.printf("%i is held\n", i);
+    if (buttons::down[i]) Serial.printf("%i down\n", i);
+    if (buttons::up[i]) Serial.printf("%i up\n", i);
+  }
+#endif
+
 
   if (buttons::down[2]) {
     clear_pixels();
