@@ -1,4 +1,4 @@
-/* -------- DISPLAY --------------------------------------------------------- */
+/* -------- MAIN DISPLAY ---------------------------------------------------- */
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1327.h>
 #include "Font5x7FixedMono.h"
@@ -39,8 +39,9 @@ void display_setup(void) {
 #define B4 4
 #define B5 5
 
-void buttons_setup(void) {
-  Serial.println("-> connecting buttons");
+// TODO rewrite this as a class
+namespace buttons {
+void setup(void) {
   pinMode(B0, INPUT_PULLUP);
   pinMode(B1, INPUT_PULLUP);
   pinMode(B2, INPUT_PULLUP);
@@ -49,7 +50,7 @@ void buttons_setup(void) {
   pinMode(B5, INPUT_PULLUP);
 };
 
-Bounce buttons[NUM_BUTTONS] = {
+Bounce debounced[NUM_BUTTONS] = {
   Bounce(B0, BOUNCE_MS),
   Bounce(B1, BOUNCE_MS),
   Bounce(B2, BOUNCE_MS),
@@ -59,26 +60,29 @@ Bounce buttons[NUM_BUTTONS] = {
 };
 
 bool held[NUM_BUTTONS];
+bool down[NUM_BUTTONS];
+bool up[NUM_BUTTONS];
 
-bool buttons_update(void) {
-  bool result0 = buttons[0].update();
-  bool result1 = buttons[1].update();
-  bool result2 = buttons[2].update();
-  return (result0 && result1 && result2);
-}
-
-void handle_inputs(void) {
-  if (!buttons_update()) {
-    return;
-  }
+void update(void) {
+  /*     REMINDER:
+    - myButton.fallingEdge() == ON
+    - myButton.risingEdge() == OFF
+    ...because our buttons are wired active LOW
+  */
   for (int i = 0; i < NUM_BUTTONS; i++) {
-    if (buttons[i].fallingEdge()) {
-      held[i] = true;
-    } else if (buttons[i].risingEdge()) {
-      held[i] = false;
+    down[i] = false;
+    up[i] = false;
+    if (!buttons::debounced[i].update()) return false;
+    if (buttons::debounced[i].fallingEdge()) {
+      buttons::down[i];
+      buttons::held[i] = true;
+    } else if (buttons::debounced[i].risingEdge()) {
+      buttons::up[i] = true;
+      buttons::held[i] = false;
     }
   }
 }
+};
 
 /* ------- GRID COORDS ------------------------------------------------------ */
 #define CIRCLE_RADIUS 10
@@ -170,8 +174,7 @@ int tri_oct_brightness[OCTOGON_TRIANGLES] = {
 };
 
 int t_o_b(int index) {
-  int b = tri_oct_brightness[index];
-  return b; 
+  return tri_oct_brightness[index];
 }
 
 /* ------- SCALES ----------------------------------------------------------- */
@@ -200,12 +203,10 @@ void setup() {
   Serial.println("Starting...");
 
   // CONNECT BUTTONS
-  buttons_setup();
+  buttons::setup();
 
-  // CONNECT DISPLAY
+  // CONNECT MAIN DISPLAY
   display_setup();
-
-  // LOCAL
 }
 
 void loop() {
@@ -215,25 +216,21 @@ void loop() {
   bool every_sixteenth = tick % 16 == 0;
   bool every_eighth = tick % 8  == 0;
 
-  handle_inputs();
+  buttons::update();
 
   /* BUTTON LAYOUT
                  4
       0   1   2     5
                  3
-    REMINDER:
-    - myButton.fallingEdge() == ON
-    - myButton.risingEdge() == OFF
-    ...because our buttons are wired active LOW
   */
 
-  if (buttons[2].risingEdge() && (!held[0] && !held[1])) {
+  if (buttons::down[2]) {
     clear_pixels();
     next_scale();
   }
 
-  if (buttons[0].fallingEdge() || (every_eighth && held[0])) dec_delta();
-  if (buttons[1].fallingEdge() || (every_eighth && held[1])) inc_delta();
+  if (buttons::down[0] || (every_eighth && buttons::held[0])) dec_delta();
+  if (buttons::down[1] || (every_eighth && buttons::held[1])) inc_delta();
 
   theta += ( delta / 2 );
 
@@ -246,7 +243,7 @@ void loop() {
     }
     polar_ys[i] = sin(theta * (scales[current_scale][i][1])) * CIRCLE_RADIUS;
   }
-  
+
   // UPDATE PIXELS
   for (int j = 0; j < cols; j++) {
     for (int k = 0; k < rows; k++) {
